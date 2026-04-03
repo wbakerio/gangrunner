@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gang Runner</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div class="hero-copy-block">
+        <p class="eyebrow">Printing Layout Optimization</p>
+        <h1>Gang Runner</h1>
+        <p class="hero-copy">
+          Plan efficient press sheet layouts, compare stock costs, account for gripper space,
+          and hand a visual layout plan to production with confidence.
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button class="ghost-button" id="loadSampleButton" type="button">Load Sample</button>
+        <button class="ghost-button" id="openSettingsButton" type="button">Settings</button>
+        <button class="ghost-button" id="saveJobButton" type="button">Save Job</button>
+        <button class="ghost-button" id="loadJobButton" type="button">Load Job</button>
+        <button class="primary-button" id="printReportButton" type="button">Export / Print Layouts</button>
+        <input type="file" id="jobFileInput" accept="application/json" hidden>
+      </div>
+      <div class="hero-summary" id="heroSummary">
+        <div>
+          <span class="summary-label">Best Plan</span>
+          <strong id="summaryLayouts">0 layouts</strong>
+        </div>
+        <div>
+          <span class="summary-label">Press Sheets</span>
+          <strong id="summarySheets">0 sheets</strong>
+        </div>
+        <div>
+          <span class="summary-label">Estimated Cost</span>
+          <strong id="summaryCost">$0.00</strong>
+        </div>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="panel form-panel">
+        <div class="panel-header">
+          <div>
+            <p class="panel-kicker">Job Setup</p>
+            <h2>Items To Print</h2>
+          </div>
+          <div class="job-name-wrap">
+            <label for="jobName">Job name</label>
+            <input type="text" id="jobName" placeholder="Spring Mailer Campaign">
+          </div>
+        </div>
+
+        <form id="itemForm" class="item-form large-form">
+          <input type="hidden" id="itemEditId">
+          <label>
+            Item name
+            <input type="text" id="itemName" placeholder="Postcard A">
+          </label>
+          <label>
+            Width
+            <input type="text" id="itemWidth" inputmode="decimal" required>
+          </label>
+          <label>
+            Height
+            <input type="text" id="itemHeight" inputmode="decimal" required>
+          </label>
+          <label>
+            Quantity
+            <input type="text" id="itemQty" inputmode="numeric" required>
+          </label>
+          <div class="form-actions">
+            <button class="primary-button" id="itemSubmitButton" type="submit">+</button>
+            <button class="ghost-button hidden" id="cancelEditButton" type="button">Cancel Edit</button>
+          </div>
+        </form>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Flat Size</th>
+                <th>Run Size</th>
+                <th>Qty</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="itemsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel results-panel">
+        <div class="panel-header">
+          <div>
+            <p class="panel-kicker">Optimization Output</p>
+            <h2>Recommended Plan</h2>
+          </div>
+        </div>
+
+        <div id="emptyState" class="empty-state">
+          Add at least one item and one press sheet size in Settings to generate a layout plan.
+        </div>
+
+        <div id="resultsContent" class="results-content hidden">
+          <div class="results-cards">
+            <article class="metric-card">
+              <span>Distinct layouts</span>
+              <strong id="metricDistinctLayouts">0</strong>
+            </article>
+            <article class="metric-card">
+              <span>Total press sheets</span>
+              <strong id="metricTotalSheets">0</strong>
+            </article>
+            <article class="metric-card">
+              <span>Total estimated cost</span>
+              <strong id="metricTotalCost">$0.00</strong>
+            </article>
+            <article class="metric-card">
+              <span>Optimization mode</span>
+              <strong id="metricOptimizationMode">Fewest layouts</strong>
+            </article>
+          </div>
+
+          <div id="itemSummaryCards" class="item-summary-grid"></div>
+          <div id="layoutPlans" class="layout-plan-list"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal hidden" id="settingsModal" aria-hidden="true">
+    <div class="modal-backdrop" data-action="close-settings"></div>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="panel-header modal-header">
+        <div>
+          <p class="panel-kicker">Production Inputs</p>
+          <h2 id="settingsTitle">Settings</h2>
+        </div>
+        <button class="icon-button close-button" data-action="close-settings" type="button">Close</button>
+      </div>
+
+      <div class="modal-content">
+        <div class="settings-group">
+          <h3>General Production</h3>
+          <div class="settings-grid wide-grid">
+            <label>
+              Plating cost per layout
+              <div class="input-with-unit">
+                <input type="text" id="platingCost" inputmode="decimal">
+                <span class="field-unit">$</span>
+              </div>
+            </label>
+            <label>
+              Makeready time per layout
+              <div class="input-with-unit">
+                <input type="text" id="makereadyTime" inputmode="decimal">
+                <span class="field-unit">min</span>
+              </div>
+            </label>
+            <label>
+              Makeready sheets per layout
+              <div class="input-with-unit">
+                <input type="text" id="makereadySheets" inputmode="numeric">
+                <span class="field-unit">sht</span>
+              </div>
+            </label>
+            <label>
+              Labor cost per hour
+              <div class="input-with-unit">
+                <input type="text" id="laborCostPerHour" inputmode="decimal">
+                <span class="field-unit">$/hr</span>
+              </div>
+            </label>
+            <label>
+              Gutter between pieces
+              <div class="input-with-unit">
+                <input type="text" id="gutter" inputmode="decimal">
+                <span class="field-unit">in</span>
+              </div>
+            </label>
+            <label>
+              Sheet margin
+              <div class="input-with-unit">
+                <input type="text" id="sheetMargin" inputmode="decimal">
+                <span class="field-unit">in</span>
+              </div>
+            </label>
+            <label>
+              Gripper edge
+              <div class="input-with-unit">
+                <input type="text" id="gripper" inputmode="decimal">
+                <span class="field-unit">in</span>
+              </div>
+            </label>
+            <fieldset class="radio-field">
+              <legend>Gripper side</legend>
+              <label class="radio-option">
+                <input type="radio" name="gripperEdge" id="gripperEdgeLong" value="long">
+                <span>Long edge</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="gripperEdge" id="gripperEdgeShort" value="short">
+                <span>Short edge</span>
+              </label>
+            </fieldset>
+            <label>
+              Optimization priority
+              <select id="optimizationMode">
+                <option value="layouts-first">Fewest layouts first</option>
+                <option value="cost-first">Lowest total cost first</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="sheet-header">
+            <h3>Press Sheet Sizes</h3>
+            <p>Build a reusable stock list with per-sheet costs.</p>
+          </div>
+          <form id="sheetForm" class="item-form sheet-form">
+            <input type="hidden" id="sheetEditId">
+            <label>
+              Sheet name
+              <input type="text" id="sheetName" placeholder="28 x 40 C1S">
+            </label>
+            <label>
+              Width
+              <input type="text" id="sheetWidth" inputmode="decimal" required>
+            </label>
+            <label>
+              Height
+              <input type="text" id="sheetHeight" inputmode="decimal" required>
+            </label>
+            <label>
+              Sheet cost
+              <div class="input-with-unit">
+                <input type="text" id="sheetCost" inputmode="decimal" required>
+                <span class="field-unit">$</span>
+              </div>
+            </label>
+            <div class="form-actions">
+              <button class="secondary-button" id="sheetSubmitButton" type="submit">Add Sheet</button>
+              <button class="ghost-button hidden" id="cancelSheetEditButton" type="button">Cancel Edit</button>
+            </div>
+          </form>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Use</th>
+                  <th>Sheet</th>
+                  <th>Size</th>
+                  <th>Cost</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="sheetsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <template id="layoutCardTemplate">
+    <article class="layout-card">
+      <div class="layout-card-header">
+        <div>
+          <h3 class="layout-title"></h3>
+          <p class="layout-meta"></p>
+        </div>
+        <div class="layout-cost"></div>
+      </div>
+      <div class="layout-card-body">
+        <div class="sheet-preview-wrap">
+          <div class="sheet-preview">
+            <div class="sheet-gripper"></div>
+            <div class="sheet-safe-area"></div>
+          </div>
+        </div>
+        <div class="layout-details"></div>
+      </div>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
