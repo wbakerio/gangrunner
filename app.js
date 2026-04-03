@@ -16,19 +16,24 @@ const defaultState = {
   jobName: "",
   items: [],
   sheets: [
-    { id: createId(), name: "28 x 40", width: 28, height: 40, cost: 3.95, enabled: true },
-    { id: createId(), name: "20 x 28", width: 20, height: 28, cost: 2.75, enabled: true }
+    { id: createId(), name: "12 x 18", width: 12, height: 18, cost: 0.04525, enabled: true },
+    { id: createId(), name: "13 x 19", width: 13, height: 19, cost: 0.05155, enabled: true },
+    { id: createId(), name: "17.5 x 23", width: 17.5, height: 23, cost: 0.0778, enabled: true },
+    { id: createId(), name: "19 x 25", width: 19, height: 25, cost: 0.087, enabled: true },
+    { id: createId(), name: "20 x 26", width: 20, height: 26, cost: 0.09534, enabled: true },
+    { id: createId(), name: "20 x 28", width: 20, height: 28, cost: 0.1058, enabled: true },
+    { id: createId(), name: "23.5 x 29", width: 23.5, height: 29, cost: 0.1306, enabled: true }
   ],
   settings: {
-    platingCost: 85,
-    makereadyTime: 0.75,
-    makereadySheets: 125,
-    laborCostPerHour: 55,
-    gutter: 0.125,
+    platingCost: 36.6,
+    makereadyTime: 10,
+    makereadySheets: 100,
+    laborCostPerHour: 40,
+    gutter: 0.2,
     sheetMargin: 0.25,
-    gripper: 0.5,
+    gripper: 0.75,
     gripperEdge: "long",
-    optimizationMode: "layouts-first"
+    optimizationMode: "cost-first"
   }
 };
 
