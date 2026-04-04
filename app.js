@@ -1,4 +1,6 @@
 const STORAGE_KEY = "gang-runner-state-v2";
+const DEFAULT_SHEETFED_RUN_TYPE_ID = createId();
+const DEFAULT_LARGE_FORMAT_RUN_TYPE_ID = createId();
 const COLORS = [
   "#f4b183",
   "#9fd5c0",
@@ -11,18 +13,33 @@ const COLORS = [
   "#f7b267",
   "#84dcc6"
 ];
-
-const defaultState = {
-  jobName: "",
-  items: [],
+const LARGE_FORMAT_SAMPLE_JOB = {
+  jobName: "MagnetSigns",
+  items: [
+    { id: "7bb44c8e-0dd3-40da-9b34-0301cae8cf75", name: "handcrafted bread", width: 14, height: 21, qty: 1 },
+    { id: "315af3e1-e5ef-4341-8166-b40410d2ffbc", name: "Winter Squash Chart", width: 17, height: 32, qty: 1 },
+    { id: "461abf88-2805-4e96-9fc2-1c155e78dd09", name: "Green Sign Sidewalk", width: 2.5, height: 20, qty: 7 },
+    { id: "b9d41bf9-ebd5-4238-8b23-6006ce04719c", name: "Bread price Tags", width: 2.5, height: 3.5, qty: 9 },
+    { id: "555695c0-99df-4015-a3db-348641018e5c", name: "Beer Case", width: 22, height: 24, qty: 1 },
+    { id: "8218b97c-2fb8-44d9-bfeb-b0ad9690a97e", name: "Non Alcoholic", width: 23.5, height: 72, qty: 1 },
+    { id: "f0039d79-ec98-4314-8d02-d10419172580", name: "Wine Categories", width: 3.75, height: 5.75, qty: 28 },
+    { id: "cfe13139-5fef-4ad3-ac94-b8a9477d8871", name: "Meet Plants", width: 4, height: 20, qty: 1 },
+    { id: "c5ca5d11-bf8b-4e55-b887-eb4e44cd17eb", name: "Our Ingredients", width: 4, height: 80, qty: 1 },
+    { id: "2dd67919-78f9-4590-9560-afea20c6b808", name: "Seafood Display", width: 4.4, height: 10, qty: 18 },
+    { id: "91c6e891-c633-4e36-9451-3ecea12e67a5", name: "Everyone Welcome", width: 4.5, height: 22, qty: 3 },
+    { id: "544ee972-ab4e-4c8d-9e0a-49c0dc3d4f9e", name: "Bulk Reason", width: 40, height: 21, qty: 1 },
+    { id: "70fdd9ab-d382-409b-a5f1-b626fda96985", name: "Montana Beer", width: 5.5, height: 28.5, qty: 1 },
+    { id: "0c5cb515-98d2-4485-9484-9d3d43434b37", name: "Local / Regional", width: 5.5, height: 48, qty: 4 },
+    { id: "3cafaab5-8d0a-4faf-986e-0fe6a182f68e", name: "Comm Board", width: 7.5, height: 39, qty: 3 },
+    { id: "eab6d681-2bce-4cca-9430-3bd29824eee5", name: "Hot Bar", width: 8, height: 23.5, qty: 1 },
+    { id: "fc4d4b59-87f1-4e56-92ff-6ca40a9b28ad", name: "Salad Bar", width: 9.5, height: 20, qty: 4 }
+  ],
   sheets: [
-    { id: createId(), name: "12 x 18", width: 12, height: 18, cost: 0.04525, enabled: true },
-    { id: createId(), name: "13 x 19", width: 13, height: 19, cost: 0.05155, enabled: true },
-    { id: createId(), name: "17.5 x 23", width: 17.5, height: 23, cost: 0.0778, enabled: true },
-    { id: createId(), name: "19 x 25", width: 19, height: 25, cost: 0.087, enabled: true },
-    { id: createId(), name: "20 x 26", width: 20, height: 26, cost: 0.09534, enabled: true },
-    { id: createId(), name: "20 x 28", width: 20, height: 28, cost: 0.1058, enabled: true },
-    { id: createId(), name: "23.5 x 29", width: 23.5, height: 29, cost: 0.1306, enabled: true }
+    { id: "81c1f2ce-3010-401a-adec-20c13c0b1505", name: "20 x 28", width: 20, height: 28, cost: 0.10584, enabled: true },
+    { id: "f7237649-635e-40e6-a2a6-8d0b38243a8f", name: "19x25", width: 19, height: 25, cost: 0.087, enabled: true },
+    { id: "595d679c-a963-4fd3-a5f3-1facb812b5db", name: "23.5x29", width: 23.5, height: 29, cost: 0.13055, enabled: true },
+    { id: "e2b11fb2-fd1c-4404-b65e-bc5a3999dd21", name: "17.5x23", width: 17.5, height: 23, cost: 0.07784, enabled: true },
+    { id: "6fa4385e-2efc-43b4-a177-dd4f9f8f783c", name: "Magnet", width: 24, height: 600, cost: 220, enabled: true }
   ],
   settings: {
     platingCost: 36.6,
@@ -31,13 +48,40 @@ const defaultState = {
     laborCostPerHour: 40,
     gutter: 0.2,
     sheetMargin: 0.25,
-    gripper: 0.75,
+    gripper: 0,
     gripperEdge: "long",
     optimizationMode: "cost-first"
   }
 };
 
+const defaultState = {
+  jobName: "",
+  selectedRunTypeId: DEFAULT_LARGE_FORMAT_RUN_TYPE_ID,
+  runTypes: [
+    { id: DEFAULT_SHEETFED_RUN_TYPE_ID, name: "Sheetfed Printing" },
+    { id: DEFAULT_LARGE_FORMAT_RUN_TYPE_ID, name: "Large Format" }
+  ],
+  items: [],
+  sheets: [
+    { id: createId(), name: "12 x 18", width: 12, height: 18, cost: 0.04525, enabled: true, runTypeId: DEFAULT_SHEETFED_RUN_TYPE_ID },
+    { id: createId(), name: "13 x 19", width: 13, height: 19, cost: 0.05155, enabled: true, runTypeId: DEFAULT_SHEETFED_RUN_TYPE_ID },
+    { id: createId(), name: "17.5 x 23", width: 17.5, height: 23, cost: 0.0778, enabled: true, runTypeId: DEFAULT_SHEETFED_RUN_TYPE_ID },
+    { id: createId(), name: "19 x 25", width: 19, height: 25, cost: 0.087, enabled: true, runTypeId: DEFAULT_SHEETFED_RUN_TYPE_ID },
+    { id: createId(), name: "20 x 26", width: 20, height: 26, cost: 0.09534, enabled: true, runTypeId: DEFAULT_SHEETFED_RUN_TYPE_ID },
+    { id: createId(), name: "20 x 28", width: 20, height: 28, cost: 0.1058, enabled: true, runTypeId: DEFAULT_SHEETFED_RUN_TYPE_ID },
+    { id: createId(), name: "23.5 x 29", width: 23.5, height: 29, cost: 0.1306, enabled: true, runTypeId: DEFAULT_SHEETFED_RUN_TYPE_ID },
+    { id: createId(), name: "4 x 8 ACM", width: 48, height: 96, cost: 55.25, enabled: true, runTypeId: DEFAULT_LARGE_FORMAT_RUN_TYPE_ID },
+    { id: createId(), name: "5 x 10 ACM", width: 60, height: 112, cost: 96.01, enabled: true, runTypeId: DEFAULT_LARGE_FORMAT_RUN_TYPE_ID }
+  ],
+  settingsByRunType: {
+    [DEFAULT_SHEETFED_RUN_TYPE_ID]: createDefaultRunTypeSettings(DEFAULT_SHEETFED_RUN_TYPE_ID, "Sheetfed Printing"),
+    [DEFAULT_LARGE_FORMAT_RUN_TYPE_ID]: createDefaultRunTypeSettings(DEFAULT_LARGE_FORMAT_RUN_TYPE_ID, "Large Format")
+  }
+};
+
 let state = loadState();
+let lastCalculatedPlan = null;
+let hasPendingChanges = true;
 
 const itemForm = document.getElementById("itemForm");
 const sheetForm = document.getElementById("sheetForm");
@@ -50,6 +94,8 @@ const itemSummaryCards = document.getElementById("itemSummaryCards");
 const layoutCardTemplate = document.getElementById("layoutCardTemplate");
 
 const jobNameInput = document.getElementById("jobName");
+const selectedRunTypeInput = document.getElementById("selectedRunType");
+const modalRunTypeInput = document.getElementById("modalRunType");
 const itemEditIdInput = document.getElementById("itemEditId");
 const itemNameInput = document.getElementById("itemName");
 const itemWidthInput = document.getElementById("itemWidth");
@@ -59,7 +105,12 @@ const itemSubmitButton = document.getElementById("itemSubmitButton");
 const cancelEditButton = document.getElementById("cancelEditButton");
 
 const sheetEditIdInput = document.getElementById("sheetEditId");
+const runTypeNameInput = document.getElementById("runTypeName");
+const addRunTypeButton = document.getElementById("addRunTypeButton");
+const renameRunTypeButton = document.getElementById("renameRunTypeButton");
+const removeRunTypeButton = document.getElementById("removeRunTypeButton");
 const sheetNameInput = document.getElementById("sheetName");
+const sheetRunTypeInput = document.getElementById("sheetRunType");
 const sheetWidthInput = document.getElementById("sheetWidth");
 const sheetHeightInput = document.getElementById("sheetHeight");
 const sheetCostInput = document.getElementById("sheetCost");
@@ -67,8 +118,10 @@ const sheetSubmitButton = document.getElementById("sheetSubmitButton");
 const cancelSheetEditButton = document.getElementById("cancelSheetEditButton");
 
 const openSettingsButton = document.getElementById("openSettingsButton");
+const calculateButton = document.getElementById("calculateButton");
 const settingsModal = document.getElementById("settingsModal");
 const loadSampleButton = document.getElementById("loadSampleButton");
+const resetJobButton = document.getElementById("resetJobButton");
 const saveJobButton = document.getElementById("saveJobButton");
 const loadJobButton = document.getElementById("loadJobButton");
 const printReportButton = document.getElementById("printReportButton");
@@ -88,6 +141,7 @@ const optimizationModeInput = document.getElementById("optimizationMode");
 const summaryLayouts = document.getElementById("summaryLayouts");
 const summarySheets = document.getElementById("summarySheets");
 const summaryCost = document.getElementById("summaryCost");
+const emptyStateMessage = document.getElementById("emptyStateMessage");
 const metricDistinctLayouts = document.getElementById("metricDistinctLayouts");
 const metricTotalSheets = document.getElementById("metricTotalSheets");
 const metricTotalCost = document.getElementById("metricTotalCost");
@@ -96,6 +150,19 @@ const metricOptimizationMode = document.getElementById("metricOptimizationMode")
 jobNameInput.addEventListener("input", (event) => {
   state.jobName = event.target.value;
   persistState();
+  markPlanDirty();
+});
+
+selectedRunTypeInput.addEventListener("change", (event) => {
+  state.selectedRunTypeId = event.target.value;
+  persistState();
+  markPlanDirty();
+});
+
+modalRunTypeInput.addEventListener("change", (event) => {
+  state.selectedRunTypeId = event.target.value;
+  persistState();
+  markPlanDirty();
 });
 
 itemForm.addEventListener("submit", (event) => {
@@ -120,7 +187,7 @@ itemForm.addEventListener("submit", (event) => {
 
   resetItemForm();
   persistState();
-  render();
+  markPlanDirty();
 });
 
 cancelEditButton.addEventListener("click", () => {
@@ -132,6 +199,7 @@ sheetForm.addEventListener("submit", (event) => {
   const sheet = {
     id: sheetEditIdInput.value || createId(),
     name: sheetNameInput.value.trim() || `Sheet ${state.sheets.length + 1}`,
+    runTypeId: sheetRunTypeInput.value || state.selectedRunTypeId || state.runTypes[0]?.id,
     width: toNumber(sheetWidthInput.value),
     height: toNumber(sheetHeightInput.value),
     cost: Math.max(0, toNumber(sheetCostInput.value)),
@@ -152,7 +220,59 @@ sheetForm.addEventListener("submit", (event) => {
 
   resetSheetForm();
   persistState();
-  render();
+  markPlanDirty();
+});
+
+addRunTypeButton.addEventListener("click", () => {
+  const name = runTypeNameInput.value.trim();
+  if (!name) {
+    return;
+  }
+
+  const runType = { id: createId(), name };
+  state.runTypes.push(runType);
+  state.settingsByRunType[runType.id] = createDefaultRunTypeSettings(runType.id, runType.name);
+  state.selectedRunTypeId = runType.id;
+  persistState();
+  markPlanDirty();
+});
+
+renameRunTypeButton.addEventListener("click", () => {
+  const name = runTypeNameInput.value.trim();
+  if (!name || !state.selectedRunTypeId) {
+    return;
+  }
+
+  state.runTypes = state.runTypes.map((runType) => runType.id === state.selectedRunTypeId
+    ? { ...runType, name }
+    : runType);
+  persistState();
+  markPlanDirty();
+});
+
+removeRunTypeButton.addEventListener("click", () => {
+  const runTypeId = state.selectedRunTypeId;
+  if (!runTypeId || state.runTypes.length <= 1) {
+    window.alert("At least one run type must remain in the app.");
+    return;
+  }
+
+  const runType = state.runTypes.find((entry) => entry.id === runTypeId);
+  const confirmed = window.confirm(
+    `Remove "${runType?.name || "this run type"}"? This will permanently remove its general production settings and all press sheets assigned to it.`
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  state.runTypes = state.runTypes.filter((entry) => entry.id !== runTypeId);
+  state.sheets = state.sheets.filter((sheet) => sheet.runTypeId !== runTypeId);
+  delete state.settingsByRunType[runTypeId];
+  state.selectedRunTypeId = state.runTypes[0]?.id || "";
+  resetSheetForm();
+  persistState();
+  markPlanDirty();
 });
 
 cancelSheetEditButton.addEventListener("click", () => {
@@ -160,6 +280,22 @@ cancelSheetEditButton.addEventListener("click", () => {
 });
 
 loadSampleButton.addEventListener("click", () => {
+  const activeRunType = state.runTypes.find((runType) => runType.id === state.selectedRunTypeId);
+  const isLargeFormat = activeRunType?.id === DEFAULT_LARGE_FORMAT_RUN_TYPE_ID || activeRunType?.name?.trim().toLowerCase() === "large format";
+
+  if (isLargeFormat) {
+    state.jobName = LARGE_FORMAT_SAMPLE_JOB.jobName;
+    state.items = LARGE_FORMAT_SAMPLE_JOB.items.map((item) => ({ ...item }));
+    state.sheets = [
+      ...state.sheets.filter((sheet) => sheet.runTypeId !== state.selectedRunTypeId),
+      ...createBuiltInSheetsForRunType(state.selectedRunTypeId, activeRunType?.name)
+    ];
+    state.settingsByRunType[state.selectedRunTypeId] = createDefaultRunTypeSettings(state.selectedRunTypeId, activeRunType?.name);
+    persistState();
+    calculateAndRender();
+    return;
+  }
+
   state.jobName = "Sample Mixed Job";
   state.items = [
     { id: createId(), name: "Postcard", width: 5, height: 7, qty: 12000 },
@@ -167,7 +303,21 @@ loadSampleButton.addEventListener("click", () => {
     { id: createId(), name: "Mailer", width: 8.5, height: 11, qty: 3000 }
   ];
   persistState();
+  calculateAndRender();
+});
+
+resetJobButton.addEventListener("click", () => {
+  state.jobName = "";
+  state.items = [];
+  resetItemForm();
+  lastCalculatedPlan = null;
+  hasPendingChanges = true;
+  persistState();
   render();
+});
+
+calculateButton.addEventListener("click", () => {
+  calculateAndRender();
 });
 
 openSettingsButton.addEventListener("click", () => {
@@ -188,7 +338,7 @@ document.addEventListener("click", (event) => {
   if (target.dataset.action === "delete-item") {
     state.items = state.items.filter((item) => item.id !== target.dataset.id);
     persistState();
-    render();
+    markPlanDirty();
   }
 
   if (target.dataset.action === "edit-item") {
@@ -198,7 +348,7 @@ document.addEventListener("click", (event) => {
   if (target.dataset.action === "delete-sheet") {
     state.sheets = state.sheets.filter((sheet) => sheet.id !== target.dataset.id);
     persistState();
-    render();
+    markPlanDirty();
   }
 
   if (target.dataset.action === "toggle-sheet") {
@@ -206,12 +356,13 @@ document.addEventListener("click", (event) => {
       ? { ...sheet, enabled: target.checked }
       : sheet);
     persistState();
-    render();
+    markPlanDirty();
   }
 
   if (target.dataset.action === "edit-sheet") {
     startSheetEdit(target.dataset.id);
   }
+
 });
 
 document.addEventListener("keydown", (event) => {
@@ -230,9 +381,9 @@ for (const [input, key] of [
   [gripperInput, "gripper"]
 ]) {
   const commitValue = (event) => {
-    state.settings[key] = Math.max(0, toNumber(event.target.value));
+    getActiveRunTypeSettings()[key] = Math.max(0, toNumber(event.target.value));
     persistState();
-    render();
+    markPlanDirty();
   };
   input.addEventListener("change", commitValue);
   input.addEventListener("blur", commitValue);
@@ -241,17 +392,17 @@ for (const [input, key] of [
 for (const input of [gripperEdgeLongInput, gripperEdgeShortInput]) {
   input.addEventListener("change", (event) => {
     if (event.target.checked) {
-      state.settings.gripperEdge = event.target.value;
+      getActiveRunTypeSettings().gripperEdge = event.target.value;
       persistState();
-      render();
+      markPlanDirty();
     }
   });
 }
 
 optimizationModeInput.addEventListener("change", (event) => {
-  state.settings.optimizationMode = event.target.value;
+  getActiveRunTypeSettings().optimizationMode = event.target.value;
   persistState();
-  render();
+  markPlanDirty();
 });
 
 saveJobButton.addEventListener("click", () => {
@@ -279,6 +430,8 @@ jobFileInput.addEventListener("change", async (event) => {
     const text = await file.text();
     state = sanitizeState(JSON.parse(text));
     persistState();
+    lastCalculatedPlan = null;
+    hasPendingChanges = true;
     render();
   } catch (error) {
     window.alert("Unable to load that job file.");
@@ -288,9 +441,9 @@ jobFileInput.addEventListener("change", async (event) => {
 });
 
 printReportButton.addEventListener("click", () => {
-  const plan = buildPlanIfPossible();
+  const plan = lastCalculatedPlan;
   if (!plan) {
-    window.alert("Add at least one item and one sheet size first.");
+    window.alert(hasPendingChanges ? "Click Calculate before exporting or printing." : "Add at least one item and one sheet size first.");
     return;
   }
 
@@ -308,43 +461,109 @@ printReportButton.addEventListener("click", () => {
 function render() {
   hydrateSettingsInputs();
   jobNameInput.value = state.jobName;
+  renderRunTypeOptions();
   renderItemsTable();
   renderSheetsTable();
 
-  const plan = buildPlanIfPossible();
-  if (!plan) {
+  const canCalculate = canBuildPlan();
+  calculateButton.disabled = !canCalculate;
+
+  if (!lastCalculatedPlan) {
     emptyState.classList.remove("hidden");
     resultsContent.classList.add("hidden");
     updateSummary({ distinctLayouts: 0, totalSheets: 0, totalCost: 0 });
+    emptyStateMessage.textContent = canCalculate
+      ? "Click Calculate to generate the current layout plan."
+      : "Add at least one item and one enabled press sheet size in Settings to generate a layout plan.";
+    return;
+  }
+
+  if (hasPendingChanges) {
+    emptyState.classList.remove("hidden");
+    resultsContent.classList.add("hidden");
+    updateSummary(lastCalculatedPlan);
+    emptyStateMessage.textContent = "Changes are pending. Click Calculate to refresh the plan.";
     return;
   }
 
   emptyState.classList.add("hidden");
   resultsContent.classList.remove("hidden");
-  updateSummary(plan);
-  renderItemSummaries(plan);
-  renderLayoutPlans(plan);
+  updateSummary(lastCalculatedPlan);
+  renderItemSummaries(lastCalculatedPlan);
+  renderLayoutPlans(lastCalculatedPlan);
+}
+
+function canBuildPlan() {
+  const enabledSheets = getSelectedRunTypeSheets();
+  return Boolean(state.items.length && enabledSheets.length);
 }
 
 function buildPlanIfPossible() {
-  const enabledSheets = state.sheets.filter((sheet) => sheet.enabled !== false);
+  const enabledSheets = getSelectedRunTypeSheets();
   if (!state.items.length || !enabledSheets.length) {
     return null;
   }
-  return optimizeLayouts(state.items, enabledSheets, state.settings);
+  return optimizeLayouts(state.items, enabledSheets, getActiveRunTypeSettings());
+}
+
+function calculateAndRender() {
+  lastCalculatedPlan = buildPlanIfPossible();
+  hasPendingChanges = false;
+  render();
+}
+
+function markPlanDirty() {
+  hasPendingChanges = true;
+  render();
 }
 
 function hydrateSettingsInputs() {
-  platingCostInput.value = state.settings.platingCost;
-  makereadyTimeInput.value = state.settings.makereadyTime;
-  makereadySheetsInput.value = state.settings.makereadySheets;
-  laborCostPerHourInput.value = state.settings.laborCostPerHour;
-  gutterInput.value = state.settings.gutter;
-  sheetMarginInput.value = state.settings.sheetMargin;
-  gripperInput.value = state.settings.gripper;
-  gripperEdgeLongInput.checked = state.settings.gripperEdge !== "short";
-  gripperEdgeShortInput.checked = state.settings.gripperEdge === "short";
-  optimizationModeInput.value = state.settings.optimizationMode;
+  const settings = getActiveRunTypeSettings();
+  platingCostInput.value = settings.platingCost;
+  makereadyTimeInput.value = settings.makereadyTime;
+  makereadySheetsInput.value = settings.makereadySheets;
+  laborCostPerHourInput.value = settings.laborCostPerHour;
+  gutterInput.value = settings.gutter;
+  sheetMarginInput.value = settings.sheetMargin;
+  gripperInput.value = settings.gripper;
+  gripperEdgeLongInput.checked = settings.gripperEdge !== "short";
+  gripperEdgeShortInput.checked = settings.gripperEdge === "short";
+  optimizationModeInput.value = settings.optimizationMode;
+  runTypeNameInput.value = state.runTypes.find((runType) => runType.id === state.selectedRunTypeId)?.name || "";
+  removeRunTypeButton.disabled = state.runTypes.length <= 1;
+}
+
+function renderRunTypeOptions() {
+  selectedRunTypeInput.innerHTML = "";
+  modalRunTypeInput.innerHTML = "";
+  sheetRunTypeInput.innerHTML = "";
+
+  for (const runType of state.runTypes) {
+    const option = document.createElement("option");
+    option.value = runType.id;
+    option.textContent = runType.name;
+    selectedRunTypeInput.appendChild(option);
+
+    const modalOption = document.createElement("option");
+    modalOption.value = runType.id;
+    modalOption.textContent = runType.name;
+    modalRunTypeInput.appendChild(modalOption);
+
+    const sheetOption = document.createElement("option");
+    sheetOption.value = runType.id;
+    sheetOption.textContent = runType.name;
+    sheetRunTypeInput.appendChild(sheetOption);
+  }
+
+  if (!state.runTypes.some((runType) => runType.id === state.selectedRunTypeId)) {
+    state.selectedRunTypeId = state.runTypes[0]?.id || "";
+  }
+
+  selectedRunTypeInput.value = state.selectedRunTypeId;
+  modalRunTypeInput.value = state.selectedRunTypeId;
+  if (!sheetEditIdInput.value) {
+    sheetRunTypeInput.value = state.selectedRunTypeId;
+  }
 }
 
 function renderItemsTable() {
@@ -369,10 +588,13 @@ function renderItemsTable() {
 
 function renderSheetsTable() {
   sheetsTableBody.innerHTML = "";
-  for (const sheet of state.sheets) {
+  const visibleSheets = state.sheets.filter((sheet) => sheet.runTypeId === state.selectedRunTypeId);
+  for (const sheet of visibleSheets) {
+    const runTypeName = state.runTypes.find((runType) => runType.id === sheet.runTypeId)?.name || "Uncategorized";
     const row = document.createElement("tr");
     row.innerHTML = `
       <td><input type="checkbox" data-action="toggle-sheet" data-id="${sheet.id}" ${sheet.enabled !== false ? "checked" : ""}></td>
+      <td>${escapeHtml(runTypeName)}</td>
       <td>${escapeHtml(sheet.name)}</td>
       <td>${formatNumber(sheet.width)} x ${formatNumber(sheet.height)}</td>
       <td>${formatCurrency(sheet.cost)}</td>
@@ -387,6 +609,18 @@ function renderSheetsTable() {
   }
 }
 
+function getSelectedRunTypeSheets() {
+  return state.sheets.filter((sheet) => sheet.enabled !== false && sheet.runTypeId === state.selectedRunTypeId);
+}
+
+function getActiveRunTypeSettings() {
+  if (!state.settingsByRunType[state.selectedRunTypeId]) {
+    const activeRunType = state.runTypes.find((runType) => runType.id === state.selectedRunTypeId);
+    state.settingsByRunType[state.selectedRunTypeId] = createDefaultRunTypeSettings(activeRunType?.id, activeRunType?.name);
+  }
+  return state.settingsByRunType[state.selectedRunTypeId];
+}
+
 function updateSummary(plan) {
   summaryLayouts.textContent = `${plan.distinctLayouts} layout${plan.distinctLayouts === 1 ? "" : "s"}`;
   summarySheets.textContent = `${plan.totalSheets.toLocaleString()} sheets`;
@@ -394,7 +628,7 @@ function updateSummary(plan) {
   metricDistinctLayouts.textContent = String(plan.distinctLayouts);
   metricTotalSheets.textContent = plan.totalSheets.toLocaleString();
   metricTotalCost.textContent = formatCurrency(plan.totalCost);
-  metricOptimizationMode.textContent = state.settings.optimizationMode === "cost-first" ? "Lowest cost" : "Fewest layouts";
+  metricOptimizationMode.textContent = getActiveRunTypeSettings().optimizationMode === "cost-first" ? "Lowest cost" : "Fewest layouts";
 }
 
 function renderItemSummaries(plan) {
@@ -415,6 +649,7 @@ function renderItemSummaries(plan) {
 function renderLayoutPlans(plan) {
   layoutPlans.innerHTML = "";
   const colorMap = new Map(state.items.map((item, index) => [item.id, COLORS[index % COLORS.length]]));
+  const settings = getActiveRunTypeSettings();
 
   for (const [index, layout] of plan.layouts.entries()) {
     const fragment = layoutCardTemplate.content.cloneNode(true);
@@ -438,7 +673,7 @@ function renderLayoutPlans(plan) {
 
     const scaleX = previewWidth / layout.sheet.width;
     const scaleY = previewHeight / layout.sheet.height;
-    const gripperArea = getGripperArea(layout.sheet, state.settings);
+    const gripperArea = getGripperArea(layout.sheet, settings);
     const usableArea = layout.usableArea;
     gripperZone.style.left = `${gripperArea.x * scaleX}px`;
     gripperZone.style.top = `${gripperArea.y * scaleY}px`;
@@ -475,7 +710,7 @@ function renderLayoutPlans(plan) {
 
     const settingsSummary = document.createElement("div");
     settingsSummary.className = "layout-settings-summary";
-    settingsSummary.textContent = `Setup ${formatCurrency(layout.setupCost)} | Gutter ${formatNumber(state.settings.gutter)} | Margin ${formatNumber(state.settings.sheetMargin)} | Gripper ${formatNumber(state.settings.gripper)} on ${state.settings.gripperEdge} edge`;
+    settingsSummary.textContent = `Setup ${formatCurrency(layout.setupCost)} | Gutter ${formatNumber(settings.gutter)} | Margin ${formatNumber(settings.sheetMargin)} | Gripper ${formatNumber(settings.gripper)} on ${settings.gripperEdge} edge`;
 
     const list = document.createElement("ul");
     list.className = "detail-list";
@@ -1615,6 +1850,7 @@ function startItemEdit(itemId) {
   if (!item) {
     return;
   }
+  itemForm.classList.add("editing");
   itemEditIdInput.value = item.id;
   itemNameInput.value = item.name;
   itemWidthInput.value = item.width;
@@ -1627,6 +1863,7 @@ function startItemEdit(itemId) {
 
 function resetItemForm() {
   itemForm.reset();
+  itemForm.classList.remove("editing");
   itemEditIdInput.value = "";
   itemSubmitButton.textContent = "+";
   cancelEditButton.classList.add("hidden");
@@ -1638,8 +1875,10 @@ function startSheetEdit(sheetId) {
     return;
   }
   openSettingsButton.click();
+  state.selectedRunTypeId = sheet.runTypeId || state.selectedRunTypeId;
   sheetEditIdInput.value = sheet.id;
   sheetNameInput.value = sheet.name;
+  sheetRunTypeInput.value = sheet.runTypeId || state.selectedRunTypeId;
   sheetWidthInput.value = sheet.width;
   sheetHeightInput.value = sheet.height;
   sheetCostInput.value = sheet.cost;
@@ -1650,6 +1889,7 @@ function startSheetEdit(sheetId) {
 function resetSheetForm() {
   sheetForm.reset();
   sheetEditIdInput.value = "";
+  sheetRunTypeInput.value = state.selectedRunTypeId;
   sheetSubmitButton.textContent = "Add Sheet";
   cancelSheetEditButton.classList.add("hidden");
 }
@@ -1660,12 +1900,13 @@ function closeSettingsModal() {
 }
 
 function buildPrintHtml(plan) {
+  const settings = getActiveRunTypeSettings();
   const layoutSections = plan.layouts.map((layout, index) => {
     const previewWidth = 300;
     const previewHeight = Math.max(170, Math.round((layout.sheet.height / layout.sheet.width) * previewWidth));
     const scaleX = previewWidth / layout.sheet.width;
     const scaleY = previewHeight / layout.sheet.height;
-    const gripperArea = getGripperArea(layout.sheet, state.settings);
+    const gripperArea = getGripperArea(layout.sheet, settings);
     const usableArea = layout.usableArea;
 
     const placements = layout.placements.map((placement) => `
@@ -1782,9 +2023,9 @@ function buildPrintHtml(plan) {
             <div class="legend-note">Hatched area = gripper edge. Dashed area = usable sheet area.</div>
           </div>
           <div class="report-meta">
-            <div>Gutter ${formatNumber(state.settings.gutter)} in</div>
-            <div>Margin ${formatNumber(state.settings.sheetMargin)} in</div>
-            <div>Gripper ${formatNumber(state.settings.gripper)} in on ${escapeHtml(state.settings.gripperEdge)} edge</div>
+            <div>Gutter ${formatNumber(settings.gutter)} in</div>
+            <div>Margin ${formatNumber(settings.sheetMargin)} in</div>
+            <div>Gripper ${formatNumber(settings.gripper)} in on ${escapeHtml(settings.gripperEdge)} edge</div>
           </div>
         </div>
         <div class="summary">
@@ -1811,6 +2052,22 @@ function buildPrintHtml(plan) {
 function sanitizeState(candidate) {
   const clean = structuredClone(defaultState);
   clean.jobName = typeof candidate.jobName === "string" ? candidate.jobName : "";
+  clean.runTypes = Array.isArray(candidate.runTypes) && candidate.runTypes.length
+    ? candidate.runTypes.map((runType) => ({
+      id: typeof runType.id === "string" ? runType.id : createId(),
+      name: typeof runType.name === "string" ? runType.name : "Run Type"
+    }))
+    : Array.isArray(candidate.categories) && candidate.categories.length
+      ? candidate.categories.map((category) => ({
+        id: typeof category.id === "string" ? category.id : createId(),
+        name: typeof category.name === "string" ? category.name : "Run Type"
+      }))
+      : structuredClone(defaultState.runTypes);
+  clean.selectedRunTypeId = typeof candidate.selectedRunTypeId === "string"
+    ? candidate.selectedRunTypeId
+    : typeof candidate.selectedCategoryId === "string"
+      ? candidate.selectedCategoryId
+      : clean.runTypes[0]?.id || "";
   clean.items = Array.isArray(candidate.items) ? candidate.items.map((item) => ({
     id: typeof item.id === "string" ? item.id : createId(),
     name: typeof item.name === "string" ? item.name : "Item",
@@ -1824,20 +2081,34 @@ function sanitizeState(candidate) {
     width: Math.max(0, toNumber(sheet.width)),
     height: Math.max(0, toNumber(sheet.height)),
     cost: Math.max(0, toNumber(sheet.cost)),
-    enabled: sheet.enabled !== false
+    enabled: sheet.enabled !== false,
+    runTypeId: typeof sheet.runTypeId === "string"
+      ? sheet.runTypeId
+      : typeof sheet.categoryId === "string"
+        ? sheet.categoryId
+        : clean.runTypes[0]?.id || ""
   })).filter((sheet) => isPositiveDimension(sheet.width, sheet.height)) : clean.sheets;
 
-  clean.settings = {
-    platingCost: Math.max(0, toNumber(candidate.settings?.platingCost ?? candidate.settings?.layoutSetupCost ?? clean.settings.platingCost)),
-    makereadyTime: Math.max(0, toNumber(candidate.settings?.makereadyTime ?? clean.settings.makereadyTime)),
-    makereadySheets: Math.max(0, Math.round(toNumber(candidate.settings?.makereadySheets ?? clean.settings.makereadySheets))),
-    laborCostPerHour: Math.max(0, toNumber(candidate.settings?.laborCostPerHour ?? clean.settings.laborCostPerHour)),
-    gutter: Math.max(0, toNumber(candidate.settings?.gutter ?? clean.settings.gutter)),
-    sheetMargin: Math.max(0, toNumber(candidate.settings?.sheetMargin ?? clean.settings.sheetMargin)),
-    gripper: Math.max(0, toNumber(candidate.settings?.gripper ?? clean.settings.gripper)),
-    gripperEdge: candidate.settings?.gripperEdge === "short" ? "short" : "long",
-    optimizationMode: candidate.settings?.optimizationMode === "cost-first" ? "cost-first" : "layouts-first"
-  };
+  if (!clean.runTypes.some((runType) => runType.id === clean.selectedRunTypeId)) {
+    clean.selectedRunTypeId = clean.runTypes[0]?.id || "";
+  }
+
+  clean.settingsByRunType = {};
+  for (const runType of clean.runTypes) {
+    const defaultSettings = createDefaultRunTypeSettings(runType.id, runType.name);
+    const sourceSettings = candidate.settingsByRunType?.[runType.id] ?? candidate.settings ?? defaultSettings;
+    clean.settingsByRunType[runType.id] = {
+      platingCost: Math.max(0, toNumber(sourceSettings?.platingCost ?? sourceSettings?.layoutSetupCost ?? defaultSettings.platingCost)),
+      makereadyTime: Math.max(0, toNumber(sourceSettings?.makereadyTime ?? defaultSettings.makereadyTime)),
+      makereadySheets: Math.max(0, Math.round(toNumber(sourceSettings?.makereadySheets ?? defaultSettings.makereadySheets))),
+      laborCostPerHour: Math.max(0, toNumber(sourceSettings?.laborCostPerHour ?? defaultSettings.laborCostPerHour)),
+      gutter: Math.max(0, toNumber(sourceSettings?.gutter ?? defaultSettings.gutter)),
+      sheetMargin: Math.max(0, toNumber(sourceSettings?.sheetMargin ?? defaultSettings.sheetMargin)),
+      gripper: Math.max(0, toNumber(sourceSettings?.gripper ?? defaultSettings.gripper)),
+      gripperEdge: sourceSettings?.gripperEdge === "short" ? "short" : defaultSettings.gripperEdge,
+      optimizationMode: sourceSettings?.optimizationMode === "layouts-first" ? "layouts-first" : defaultSettings.optimizationMode
+    };
+  }
 
   return clean;
 }
@@ -1853,6 +2124,59 @@ function loadState() {
 
 function persistState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function createBuiltInSheetsForRunType(runTypeId, runTypeName = "") {
+  const normalizedName = String(runTypeName).trim().toLowerCase();
+  const isLargeFormat = runTypeId === DEFAULT_LARGE_FORMAT_RUN_TYPE_ID || normalizedName === "large format";
+
+  if (isLargeFormat) {
+    return [
+      { id: createId(), name: "4 x 8 ACM", width: 48, height: 96, cost: 55.25, enabled: true, runTypeId },
+      { id: createId(), name: "5 x 10 ACM", width: 60, height: 112, cost: 96.01, enabled: true, runTypeId }
+    ];
+  }
+
+  return [
+    { id: createId(), name: "12 x 18", width: 12, height: 18, cost: 0.04525, enabled: true, runTypeId },
+    { id: createId(), name: "13 x 19", width: 13, height: 19, cost: 0.05155, enabled: true, runTypeId },
+    { id: createId(), name: "17.5 x 23", width: 17.5, height: 23, cost: 0.0778, enabled: true, runTypeId },
+    { id: createId(), name: "19 x 25", width: 19, height: 25, cost: 0.087, enabled: true, runTypeId },
+    { id: createId(), name: "20 x 26", width: 20, height: 26, cost: 0.09534, enabled: true, runTypeId },
+    { id: createId(), name: "20 x 28", width: 20, height: 28, cost: 0.1058, enabled: true, runTypeId },
+    { id: createId(), name: "23.5 x 29", width: 23.5, height: 29, cost: 0.1306, enabled: true, runTypeId }
+  ];
+}
+
+function createDefaultRunTypeSettings(runTypeId, runTypeName = "") {
+  const normalizedName = String(runTypeName).trim().toLowerCase();
+  const isLargeFormat = runTypeId === DEFAULT_LARGE_FORMAT_RUN_TYPE_ID || normalizedName === "large format";
+
+  if (isLargeFormat) {
+    return {
+      platingCost: 0,
+      makereadyTime: 1,
+      makereadySheets: 0,
+      laborCostPerHour: 40,
+      gutter: 0.2,
+      sheetMargin: 0.25,
+      gripper: 0,
+      gripperEdge: "long",
+      optimizationMode: "cost-first"
+    };
+  }
+
+  return {
+    platingCost: 36.6,
+    makereadyTime: 10,
+    makereadySheets: 100,
+    laborCostPerHour: 40,
+    gutter: 0.2,
+    sheetMargin: 0.25,
+    gripper: 0.75,
+    gripperEdge: "long",
+    optimizationMode: "cost-first"
+  };
 }
 
 function createId() {

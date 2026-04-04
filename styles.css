@@ -92,9 +92,48 @@ body {
   grid-column: 1 / 2;
 }
 
+.run-type-row {
+  grid-column: 1 / 2;
+  display: flex;
+  align-items: start;
+  gap: 16px;
+}
+
+.run-type-bar {
+  display: grid;
+  gap: 8px;
+  width: min(420px, 100%);
+  flex: 0 0 min(420px, 100%);
+  padding: 16px 18px 18px;
+  margin-top: 20px;
+  border-radius: 20px;
+  background: rgba(245, 250, 253, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+}
+
+.run-type-side-actions {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding-top: 20px;
+}
+
+.run-type-side-actions .primary-button {
+  min-height: 54px;
+  min-width: 118px;
+}
+
+.run-type-secondary-actions {
+  display: flex;
+  gap: 10px;
+}
+
 .hero-summary {
   display: grid;
   gap: 18px;
+  margin-top: -40px;
 }
 
 .hero-summary strong {
@@ -107,6 +146,7 @@ body {
   grid-template-columns: minmax(460px, 0.9fr) minmax(700px, 1.35fr);
   gap: 24px;
   align-items: start;
+  margin-top: -16px;
 }
 
 .panel {
@@ -124,6 +164,18 @@ body {
 
 .job-name-wrap {
   min-width: 280px;
+}
+
+.job-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 12px;
+  width: min(620px, 100%);
+}
+
+.job-meta-grid.one-up {
+  grid-template-columns: minmax(220px, 1fr);
+  width: min(320px, 100%);
 }
 
 .job-name-wrap input {
@@ -149,6 +201,12 @@ select {
   font: inherit;
   background: rgba(255, 255, 255, 0.92);
   color: var(--text);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(88, 113, 132, 0.45);
+  opacity: 1;
 }
 
 .input-with-unit {
@@ -232,8 +290,89 @@ select:focus {
   margin-bottom: 18px;
 }
 
+.inline-form-action {
+  align-self: end;
+}
+
+.submit-action {
+  grid-column: 5;
+  grid-row: 1;
+}
+
+.cancel-action {
+  grid-column: 4;
+  grid-row: 2;
+}
+
+.inline-form-action button {
+  width: 100%;
+}
+
+.submit-action #itemSubmitButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  padding: 0;
+  line-height: 1;
+}
+
+.large-form.editing .submit-action {
+  grid-column: 3;
+  grid-row: 2;
+}
+
 .sheet-form {
-  grid-template-columns: minmax(220px, 1.5fr) repeat(3, minmax(150px, 1fr)) minmax(180px, 0.9fr);
+  grid-template-columns: minmax(220px, 1.5fr) minmax(180px, 1fr) repeat(3, minmax(150px, 1fr)) minmax(180px, 0.9fr);
+}
+
+.category-form {
+  grid-template-columns: minmax(260px, 1fr) minmax(180px, 0.5fr);
+  margin-bottom: 16px;
+}
+
+.run-type-settings-grid {
+  grid-template-columns: minmax(240px, 320px) minmax(320px, 1fr);
+  align-items: start;
+  column-gap: 16px;
+  row-gap: 12px;
+}
+
+.run-type-settings-grid > label,
+.run-type-editor {
+  align-self: start;
+}
+
+.run-type-editor {
+  display: grid;
+  gap: 10px;
+  padding-left: 200px;
+}
+
+.run-type-editor label {
+  gap: 6px;
+  font-size: 0.82rem;
+}
+
+.run-type-editor input {
+  max-width: 360px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  font-size: 0.82rem;
+}
+
+.run-type-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.run-type-actions button {
+  width: auto;
+  padding: 8px 10px;
+  border-radius: 11px;
+  font-size: 0.8rem;
 }
 
 .form-actions {
@@ -320,13 +459,32 @@ tbody tr + tr td {
   gap: 8px;
 }
 
+.active-category-badge {
+  display: inline-flex;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(31, 106, 96, 0.12);
+  color: var(--success);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
   padding: 24px;
   border: 1px dashed rgba(118, 98, 74, 0.45);
   border-radius: 18px;
   text-align: center;
   color: var(--muted);
   background: rgba(255, 255, 255, 0.45);
+}
+
+.empty-state p {
+  margin: 0;
+  max-width: 520px;
 }
 
 .hidden {
@@ -349,6 +507,11 @@ tbody tr + tr td {
 .item-summary-card {
   border-radius: 18px;
   padding: 18px;
+}
+
+.metric-card {
+  background: rgba(228, 238, 246, 0.96);
+  border: 1px solid rgba(28, 52, 74, 0.18);
 }
 
 .metric-card strong,
@@ -566,8 +729,20 @@ tbody tr + tr td {
     grid-template-columns: 1fr;
   }
 
+  .run-type-row,
+  .run-type-secondary-actions {
+    flex-direction: column;
+  }
+
+  .run-type-bar {
+    width: 100%;
+    flex-basis: auto;
+  }
+
   .large-form,
   .sheet-form,
+  .category-form,
+  .run-type-settings-grid,
   .wide-grid {
     grid-template-columns: 1fr;
   }
@@ -576,6 +751,7 @@ tbody tr + tr td {
     flex-direction: column;
   }
 
+  .job-meta-grid,
   .job-name-wrap,
   .job-name-wrap input {
     min-width: 0;

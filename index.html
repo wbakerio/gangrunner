@@ -20,10 +20,21 @@
       <div class="hero-actions">
         <button class="ghost-button" id="loadSampleButton" type="button">Load Sample</button>
         <button class="ghost-button" id="openSettingsButton" type="button">Settings</button>
-        <button class="ghost-button" id="saveJobButton" type="button">Save Job</button>
-        <button class="ghost-button" id="loadJobButton" type="button">Load Job</button>
-        <button class="primary-button" id="printReportButton" type="button">Export / Print Layouts</button>
+        <button class="ghost-button" id="printReportButton" type="button">Export / Print Layouts</button>
         <input type="file" id="jobFileInput" accept="application/json" hidden>
+      </div>
+      <div class="run-type-row">
+        <div class="run-type-bar">
+          <label for="selectedRunType">Run Type</label>
+          <select id="selectedRunType"></select>
+        </div>
+        <div class="run-type-side-actions">
+          <button class="primary-button" id="resetJobButton" type="button">RESET</button>
+          <div class="run-type-secondary-actions">
+            <button class="ghost-button" id="saveJobButton" type="button">Save Job</button>
+            <button class="ghost-button" id="loadJobButton" type="button">Load Job</button>
+          </div>
+        </div>
       </div>
       <div class="hero-summary" id="heroSummary">
         <div>
@@ -48,9 +59,11 @@
             <p class="panel-kicker">Job Setup</p>
             <h2>Items To Print</h2>
           </div>
-          <div class="job-name-wrap">
-            <label for="jobName">Job name</label>
-            <input type="text" id="jobName" placeholder="Spring Mailer Campaign">
+          <div class="job-meta-grid one-up">
+            <div class="job-name-wrap">
+              <label for="jobName">Job name</label>
+              <input type="text" id="jobName" placeholder="Spring Mailer Campaign">
+            </div>
           </div>
         </div>
 
@@ -72,8 +85,10 @@
             Quantity
             <input type="text" id="itemQty" inputmode="numeric" required>
           </label>
-          <div class="form-actions">
+          <div class="inline-form-action submit-action">
             <button class="primary-button" id="itemSubmitButton" type="submit">+</button>
+          </div>
+          <div class="inline-form-action cancel-action">
             <button class="ghost-button hidden" id="cancelEditButton" type="button">Cancel Edit</button>
           </div>
         </form>
@@ -103,7 +118,8 @@
         </div>
 
         <div id="emptyState" class="empty-state">
-          Add at least one item and one press sheet size in Settings to generate a layout plan.
+          <p id="emptyStateMessage">Add at least one item and one press sheet size in Settings to generate a layout plan.</p>
+          <button class="primary-button" id="calculateButton" type="button">Calculate</button>
         </div>
 
         <div id="resultsContent" class="results-content hidden">
@@ -145,6 +161,30 @@
       </div>
 
       <div class="modal-content">
+        <div class="settings-group">
+          <div class="sheet-header">
+            <h3>Run Type</h3>
+            <p>Select which run type you want to edit in this settings view. Then choose production costs associated with that type along with the associated press sheet sizes for that type.</p>
+          </div>
+          <div class="settings-grid run-type-settings-grid">
+            <label>
+              Active run type
+              <select id="modalRunType"></select>
+            </label>
+            <div class="run-type-editor">
+              <label>
+                Run type name
+                <input type="text" id="runTypeName" placeholder="Digital Stocks">
+              </label>
+              <div class="run-type-actions">
+                <button class="secondary-button" id="addRunTypeButton" type="button">Add New</button>
+                <button class="ghost-button" id="renameRunTypeButton" type="button">Save Name</button>
+                <button class="icon-button" id="removeRunTypeButton" type="button">Remove</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="settings-group">
           <h3>General Production</h3>
           <div class="settings-grid wide-grid">
@@ -230,6 +270,10 @@
               <input type="text" id="sheetName" placeholder="28 x 40 C1S">
             </label>
             <label>
+              Run type
+              <select id="sheetRunType"></select>
+            </label>
+            <label>
               Width
               <input type="text" id="sheetWidth" inputmode="decimal" required>
             </label>
@@ -255,6 +299,7 @@
               <thead>
                 <tr>
                   <th>Use</th>
+                  <th>Run Type</th>
                   <th>Sheet</th>
                   <th>Size</th>
                   <th>Cost</th>
