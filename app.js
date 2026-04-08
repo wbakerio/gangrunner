@@ -82,6 +82,8 @@ const defaultState = {
 let state = loadState();
 let lastCalculatedPlan = null;
 let hasPendingChanges = true;
+const RUN_TYPE_SWITCH_DURATION_MS = 1000;
+let runTypeSwitchTimeout = null;
 
 const itemForm = document.getElementById("itemForm");
 const sheetForm = document.getElementById("sheetForm");
@@ -137,6 +139,8 @@ const gripperInput = document.getElementById("gripper");
 const gripperEdgeLongInput = document.getElementById("gripperEdgeLong");
 const gripperEdgeShortInput = document.getElementById("gripperEdgeShort");
 const optimizationModeInput = document.getElementById("optimizationMode");
+const generalProductionCard = document.getElementById("generalProductionCard");
+const pressSheetSizesCard = document.getElementById("pressSheetSizesCard");
 
 const summaryLayouts = document.getElementById("summaryLayouts");
 const summarySheets = document.getElementById("summarySheets");
@@ -160,9 +164,7 @@ selectedRunTypeInput.addEventListener("change", (event) => {
 });
 
 modalRunTypeInput.addEventListener("change", (event) => {
-  state.selectedRunTypeId = event.target.value;
-  persistState();
-  markPlanDirty();
+  animateRunTypeSwitch(event.target.value);
 });
 
 itemForm.addEventListener("submit", (event) => {
@@ -809,6 +811,8 @@ function generateCandidates(items, sheets, remaining, settings) {
     const sortedItems = [...items].sort((a, b) => compareItemsForPacking(a, b, remaining));
     const dominantItem = sortedItems[0];
 
+    candidates.push(...buildBalancedSameSizeCandidates(sheet, usableArea, sortedItems, remaining, settings));
+
     for (const rotated of [false, true]) {
       const tiledDominantCandidate = buildDominantTiledCandidate(
         sheet,
@@ -886,6 +890,47 @@ function generateCandidates(items, sheets, remaining, settings) {
     }
   }
   return dedupeCandidates(candidates);
+}
+
+function buildBalancedSameSizeCandidates(sheet, usableArea, items, remaining, settings) {
+  const candidates = [];
+  const groups = groupItemsBySize(items, remaining);
+
+  for (const group of groups) {
+    for (const rotated of [false, true]) {
+      const sample = group[0];
+      const printWidth = rotated ? sample.runHeight : sample.runWidth;
+      const printHeight = rotated ? sample.runWidth : sample.runHeight;
+      const cols = countFit(usableArea.width, printWidth, settings.gutter);
+      const rows = countFit(usableArea.height, printHeight, settings.gutter);
+      const slotCount = cols * rows;
+
+      if (cols <= 0 || rows <= 0 || slotCount < 2) {
+        continue;
+      }
+
+      const maxSubsetSize = Math.min(group.length, slotCount);
+      for (let subsetSize = maxSubsetSize; subsetSize >= 2; subsetSize -= 1) {
+        const subset = [...group]
+          .sort((a, b) => (remaining.get(b.id) || 0) - (remaining.get(a.id) || 0))
+          .slice(0, subsetSize);
+        const candidate = buildBalancedGroupedSheetCandidate(
+          sheet,
+          usableArea,
+          subset,
+          remaining,
+          settings.gutter,
+          rotated
+        );
+
+        if (candidate) {
+          candidates.push(candidate);
+        }
+      }
+    }
+  }
+
+  return candidates;
 }
 
 function buildDominantTiledCandidate(sheet, usableArea, items, remaining, settings, dominantItem, rotated) {
@@ -1051,16 +1096,7 @@ function buildTiledSlots(rect, sample, rotated, gutter, group, remaining) {
   }
 
   const placements = [];
-  const orderedItems = [...group].sort((a, b) => (remaining.get(b.id) || 0) - (remaining.get(a.id) || 0));
-  const allocated = [];
-
-  for (const item of orderedItems) {
-    allocated.push(item);
-  }
-
-  while (allocated.length < slotCount) {
-    allocated.push(orderedItems[0]);
-  }
+  const allocated = distributeSlotsEvenly(group, slotCount, remaining);
 
   for (let row = 0; row < rows; row += 1) {
     for (let col = 0; col < cols; col += 1) {
@@ -1100,6 +1136,107 @@ function buildTiledSlots(rect, sample, rotated, gutter, group, remaining) {
     bottomY,
     bottomHeight
   };
+}
+
+function buildBalancedGroupedSheetCandidate(sheet, usableArea, group, remaining, gutter, rotated) {
+  const sample = group[0];
+  const printWidth = rotated ? sample.runHeight : sample.runWidth;
+  const printHeight = rotated ? sample.runWidth : sample.runHeight;
+  const cols = countFit(usableArea.width, printWidth, gutter);
+  const rows = countFit(usableArea.height, printHeight, gutter);
+
+  if (cols <= 0 || rows <= 0) {
+    return null;
+  }
+
+  const slotCount = cols * rows;
+  if (slotCount < group.length) {
+    return null;
+  }
+
+  const allocated = distributeSlotsEvenly(group, slotCount, remaining);
+  const placements = [];
+  const counts = new Map();
+
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      const item = allocated[row * cols + col];
+      if (!item) {
+        continue;
+      }
+
+      placements.push({
+        itemId: item.id,
+        itemName: item.name,
+        x: usableArea.x + col * (printWidth + gutter),
+        y: usableArea.y + row * (printHeight + gutter),
+        width: printWidth,
+        height: printHeight,
+        rotated,
+        flatWidth: item.width,
+        flatHeight: item.height
+      });
+      counts.set(item.id, (counts.get(item.id) || 0) + 1);
+    }
+  }
+
+  if (!placements.length) {
+    return null;
+  }
+
+  const usedArea = placements.reduce((sum, placement) => sum + placement.width * placement.height, 0);
+  return {
+    key: "",
+    sheet,
+    usableArea,
+    placements,
+    counts,
+    utilizedArea: usedArea,
+    utilization: (usedArea / (usableArea.width * usableArea.height)) * 100,
+    rotationTransitions: countRotationTransitions(placements, gutter)
+  };
+}
+
+function distributeSlotsEvenly(group, slotCount, remaining) {
+  const orderedItems = [...group].sort((a, b) => {
+    const remainingDiff = (remaining.get(b.id) || 0) - (remaining.get(a.id) || 0);
+    if (remainingDiff !== 0) {
+      return remainingDiff;
+    }
+    return a.name.localeCompare(b.name);
+  });
+  const allocations = new Map(orderedItems.map((item) => [item.id, 0]));
+  const allocated = [];
+
+  while (allocated.length < slotCount) {
+    const availableItems = orderedItems
+      .filter((item) => (remaining.get(item.id) || 0) > 0)
+      .sort((a, b) => {
+        const currentDiff = (allocations.get(a.id) || 0) - (allocations.get(b.id) || 0);
+        if (currentDiff !== 0) {
+          return currentDiff;
+        }
+        const needDiff = (remaining.get(b.id) || 0) - (remaining.get(a.id) || 0);
+        if (needDiff !== 0) {
+          return needDiff;
+        }
+        return a.name.localeCompare(b.name);
+      });
+
+    if (!availableItems.length) {
+      break;
+    }
+
+    for (const item of availableItems) {
+      if (allocated.length >= slotCount) {
+        break;
+      }
+      allocations.set(item.id, (allocations.get(item.id) || 0) + 1);
+      allocated.push(item);
+    }
+  }
+
+  return allocated;
 }
 
 function generateHybridCapMaps(dominantItem, dominantCount, secondaryItems) {
@@ -1897,6 +2034,51 @@ function resetSheetForm() {
 function closeSettingsModal() {
   settingsModal.classList.add("hidden");
   settingsModal.setAttribute("aria-hidden", "true");
+}
+
+function animateRunTypeSwitch(nextRunTypeId) {
+  if (!nextRunTypeId || nextRunTypeId === state.selectedRunTypeId) {
+    return;
+  }
+
+  const animatedPanels = [generalProductionCard, pressSheetSizesCard].filter(Boolean);
+  if (!animatedPanels.length) {
+    state.selectedRunTypeId = nextRunTypeId;
+    persistState();
+    markPlanDirty();
+    return;
+  }
+
+  if (runTypeSwitchTimeout) {
+    clearTimeout(runTypeSwitchTimeout);
+    runTypeSwitchTimeout = null;
+  }
+
+  for (const panel of animatedPanels) {
+    panel.classList.remove("switching-in");
+    panel.classList.add("switching-out");
+  }
+
+  const midpoint = RUN_TYPE_SWITCH_DURATION_MS / 2;
+  runTypeSwitchTimeout = setTimeout(() => {
+    state.selectedRunTypeId = nextRunTypeId;
+    persistState();
+    markPlanDirty();
+
+    requestAnimationFrame(() => {
+      for (const panel of animatedPanels) {
+        panel.classList.remove("switching-out");
+        panel.classList.add("switching-in");
+      }
+    });
+
+    runTypeSwitchTimeout = setTimeout(() => {
+      for (const panel of animatedPanels) {
+        panel.classList.remove("switching-in");
+      }
+      runTypeSwitchTimeout = null;
+    }, midpoint);
+  }, midpoint);
 }
 
 function buildPrintHtml(plan) {
